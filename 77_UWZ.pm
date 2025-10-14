@@ -35,7 +35,7 @@
 #
 #
 #
-#  $Id$
+#  $Id: 77_UWZ.pm 25306 2021-12-06 05:27:48Z CoolTux $
 #
 ####################################################################################################
 # also a thanks goes to hexenmeister
@@ -55,8 +55,7 @@ use Encode qw(encode_utf8);
 
 no
   if $] >= 5.017011,
-  warnings => 'experimental::lexical_subs',
-  'experimental::smartmatch';
+  warnings => 'experimental::lexical_subs';
 
 my $missingModul;
 eval 'use LWP::UserAgent;1' or $missingModul .= 'LWP::UserAgent ';
@@ -170,7 +169,8 @@ BEGIN {
           init_done
           FW_httpheader
           HttpUtils_BlockingGet
-          deviceEvents)
+          deviceEvents
+          contains_string)
     );
 }
 
@@ -182,13 +182,13 @@ GP_Export(
       Run
       Aborted
       Done
-      )
+    )
 );
 
 my @DEweekdays =
   qw(Sonntag Montag Dienstag Mittwoch Donnerstag Freitag Samstag);
 my @DEmonths = (
-    'Januar', 'Februar', 'März',     'April',   'Mai',      'Juni',
+    'Januar', 'Februar', 'März',      'April',   'Mai',      'Juni',
     'Juli',   'August',  'September', 'Oktober', 'November', 'Dezember'
 );
 my @NLweekdays = qw(zondag maandag dinsdag woensdag donderdag vrijdag zaterdag);
@@ -203,7 +203,7 @@ my @FRmonths   = (
 );
 my @ENweekdays = qw(sunday monday thuesday wednesday thursday friday saturday);
 my @ENmonths   = (
-    'January', 'February', 'March',     'April',   'Mäy',     'June',
+    'January', 'February', 'March',     'April',   'Mäy',      'June',
     'July',    'August',   'September', 'October', 'November', 'December'
 );
 
@@ -221,7 +221,7 @@ sub Log {
     my $xline = ( caller(0) )[2];
 
     my $xsubroutine = ( caller(1) )[3];
-    my $sub = ( split( ':', $xsubroutine ) )[2];
+    my $sub         = ( split( ':', $xsubroutine ) )[2];
     $sub =~ s/UWZ_//;
 
     my $instName = ( ref($hash) eq 'HASH' ) ? $hash->{NAME} : $hash;
@@ -558,13 +558,13 @@ sub Define {
         ## URL by CountryCode
 
         my $URL_language = 'en';
-        if ( $hash->{CountryCode} ~~ [ 'DE', 'AT', 'CH' ] ) {
+        if ( contains_string( $hash->{CountryCode}, ( 'DE', 'AT', 'CH' ) ) ) {
             $URL_language = 'de';
         }
-        if ( $hash->{CountryCode} ~~ ['NL'] ) {
+        if ( $hash->{CountryCode} eq 'NL' ) {
             $URL_language = 'nl';
         }
-        if ( $hash->{CountryCode} ~~ ['FR'] ) {
+        if ( $hash->{CountryCode} eq 'FR' ) {
             $URL_language = 'fr';
         }
 
@@ -626,28 +626,22 @@ sub Set {
     my $aArg = shift // return;
 
     my $name = shift @$aArg // return;
-    my $cmd  = shift @$aArg // return qq{"set $name" needs at least one argument};
+    my $cmd  = shift @$aArg
+      // return qq{"set $name" needs at least one argument};
 
     my $usage = "Unknown argument $cmd, choose one of update:noArg "
       if ( ( lc $hash->{CountryCode} ) ne 'search' );
 
     return $usage if ( scalar( @{$aArg} ) != 0 );
 
-    given ($cmd) {
-        when ("?") {
-            return $usage;
-        }
-
-        when ('update') {
-            Log $hash, 4, 'set command: ' . $cmd;
-            $hash->{fhem}{LOCAL} = 1;
-            Start($hash);
-            $hash->{fhem}{LOCAL} = 0;
-        }
-
-        default {
-            return $usage;
-        }
+    if ( $cmd eq 'update' ) {
+        Log $hash, 4, 'set command: ' . $cmd;
+        $hash->{fhem}{LOCAL} = 1;
+        Start($hash);
+        $hash->{fhem}{LOCAL} = 0;
+    }
+    else {    # including $cmd eq '?'
+        return $usage;
     }
 
     return;
@@ -702,9 +696,10 @@ sub Get {
     my $aArg = shift // return;
 
     my $name = shift @$aArg // return;
-    my $cmd  = shift @$aArg // return qq{"get $name" needs at least one argument};
+    my $cmd  = shift @$aArg
+      // return qq{"get $name" needs at least one argument};
 
-    if ( $hash->{CountryCode} ~~ [ 'DE', 'AT', 'CH' ] ) {
+    if ( contains_string( $hash->{CountryCode}, ( 'DE', 'AT', 'CH' ) ) ) {
         my $usage =
 "Unknown argument $cmd, choose one of Sturm:noArg Schneefall:noArg Regen:noArg Extremfrost:noArg Waldbrand:noArg Gewitter:noArg Glaette:noArg Hitze:noArg Glatteisregen:noArg Bodenfrost:noArg Hagel:noArg ";
 
@@ -725,7 +720,7 @@ sub Get {
           :                                 $usage;
     }
 
-    elsif ( $hash->{CountryCode} ~~ ['NL'] ) {
+    elsif ( $hash->{CountryCode} eq 'NL' ) {
         my $usage =
 "Unknown argument $cmd, choose one of storm:noArg sneeuw:noArg regen:noArg strenge-vorst:noArg bosbrand:noArg onweer:noArg gladheid:noArg hitte:noArg ijzel:noArg grondvorst:noArg hagel:noArg ";
 
@@ -746,7 +741,7 @@ sub Get {
           :                                 $usage;
     }
 
-    elsif ( $hash->{CountryCode} ~~ ['FR'] ) {
+    elsif ( $hash->{CountryCode} eq 'FR' ) {
         my $usage =
 "Unknown argument $cmd, choose one of tempete:noArg neige:noArg pluie:noArg strenge-vorst:noArg incendie-de-foret:noArg orage:noArg glissange:noArg canicule:noArg verglas:noArg grondvorst:noArg grele:noArg ";
 
@@ -756,14 +751,14 @@ sub Get {
             $cmd =~ m{\Atempete}xms          ? GetCurrent( $hash, 2 )
           : $cmd =~ m{\Aneige}xms            ? GetCurrent( $hash, 3 )
           : $cmd =~ m{\Apluie}xms            ? GetCurrent( $hash, 4 )
-          : $cmd =~ m{\Atempérature}xms     ? GetCurrent( $hash, 5 )
-          : $cmd =~ m{\Afeu-de-forêt}xms    ? GetCurrent( $hash, 6 )
+          : $cmd =~ m{\Atempérature}xms      ? GetCurrent( $hash, 5 )
+          : $cmd =~ m{\Afeu-de-forêt}xms     ? GetCurrent( $hash, 6 )
           : $cmd =~ m{\Aorage}xms            ? GetCurrent( $hash, 7 )
           : $cmd =~ m{\Aoute-glissante}xms   ? GetCurrent( $hash, 8 )
           : $cmd =~ m{\Achaleur}xms          ? GetCurrent( $hash, 9 )
           : $cmd =~ m{\Apluie-de-verglas}xms ? GetCurrent( $hash, 10 )
-          : $cmd =~ m{\Agelée}xms           ? GetCurrent( $hash, 11 )
-          : $cmd =~ m{\Agrêle}xms           ? GetCurrentHail($hash)
+          : $cmd =~ m{\Agelée}xms            ? GetCurrent( $hash, 11 )
+          : $cmd =~ m{\Agrêle}xms            ? GetCurrentHail($hash)
           :                                    $usage;
     }
 
@@ -772,7 +767,9 @@ sub Get {
 
         return $usage if ( scalar( @{$aArg} ) != 1 );
 
-        if ( $cmd =~ m{\ASearchAreaID}xms ) { UWZSearchLatLon( $name, $aArg->[0] ); }
+        if ( $cmd =~ m{\ASearchAreaID}xms ) {
+            UWZSearchLatLon( $name, $aArg->[0] );
+        }
         elsif ( $cmd =~ m{\AAreaID}xms ) {
             my @splitparam = split( /,/, $aArg->[0] );
             UWZSearchAreaID( $splitparam[0], $splitparam[1] );
@@ -932,13 +929,13 @@ sub Start {
         $URL_language = AttrVal( $hash->{NAME}, 'lang', '' );
     }
     else {
-        if ( $hash->{CountryCode} ~~ [ 'DE', 'AT', 'CH' ] ) {
+        if ( contains_string( $hash->{CountryCode}, ( 'DE', 'AT', 'CH' ) ) ) {
             $URL_language = 'de';
         }
-        elsif ( $hash->{CountryCode} ~~ ['NL'] ) {
+        elsif ( $hash->{CountryCode} eq 'NL' ) {
             $URL_language = 'nl';
         }
-        elsif ( $hash->{CountryCode} ~~ ['FR'] ) {
+        elsif ( $hash->{CountryCode} eq 'FR' ) {
             $URL_language = 'fr';
         }
     }
@@ -1022,12 +1019,17 @@ sub Done {
                 # Message by CountryCode
 
                 $newState = 'Warnings: ' . $values{WarnCount};
-                $newState = 'Warnungen: ' . $values{WarnCount}
-                  if ( $hash->{CountryCode} ~~ [ 'DE', 'AT', 'CH' ] );
+                $newState = 'Warnungen: '
+                  . $values{WarnCount}
+                  if (
+                    contains_string(
+                        $hash->{CountryCode}, ( 'DE', 'AT', 'CH' )
+                    )
+                  );
                 $newState = 'Aantal waarschuwingen: ' . $values{WarnCount}
-                  if ( $hash->{CountryCode} ~~ ['NL'] );
+                  if ( $hash->{CountryCode} eq 'NL' );
                 $newState = 'Avertissements: ' . $values{WarnCount}
-                  if ( $hash->{CountryCode} ~~ ['FR'] );
+                  if ( $hash->{CountryCode} eq 'FR' );
 
                 # end Message by CountryCode
             }
@@ -1085,7 +1087,7 @@ sub Run {
     my $readingStartTime = time();
     my $attrdownload     = AttrVal( $name, 'download', '' );
     my $attrsavepath     = AttrVal( $name, 'savepath', '' );
-    my $maps2fetch       = AttrVal( $name, 'maps', '' );
+    my $maps2fetch       = AttrVal( $name, 'maps',     '' );
 
     ## begin redundant Reading switch
     my $attrhumanreadable = AttrVal( $name, 'humanreadable', '' );
@@ -1124,7 +1126,7 @@ sub Run {
     if ( $UWZ_download == 1 ) {
         if ( !defined($maps2fetch) ) { $maps2fetch = 'deutschland'; }
         Log $hash, 4, 'Maps2Fetch : ' . $maps2fetch;
-        my @maps = split( ' ', $maps2fetch );
+        my @maps       = split( ' ', $maps2fetch );
         my $uwz_de_url = 'https://www.unwetterzentrale.de/images/map/';
 
         foreach my $smap (@maps) {
@@ -1259,15 +1261,15 @@ sub Run {
 
         my %severitycolor = (
             '0'  => 'green',
-            '1'  => 'unknown',            # <===== FIX HERE
-            '2'  => 'unknown',            # <===== FIX HERE
-            '3'  => 'unknown',            # <===== FIX HERE
+            '1'  => 'unknown',    # <===== FIX HERE
+            '2'  => 'unknown',    # <===== FIX HERE
+            '3'  => 'unknown',    # <===== FIX HERE
             '4'  => 'orange',
-            '5'  => 'unknown',            # <===== FIX HERE
-            '6'  => 'unknown',            # <===== FIX HERE
+            '5'  => 'unknown',    # <===== FIX HERE
+            '6'  => 'unknown',    # <===== FIX HERE
             '7'  => 'orange',
             '8'  => 'gelb',
-            '9'  => 'gelb',               # <===== FIX HERE
+            '9'  => 'gelb',       # <===== FIX HERE
             '10' => 'orange',
             '11' => 'rot',
             '12' => 'violett'
@@ -1335,8 +1337,7 @@ sub Run {
                   . $i
                   . '_Start_Date|'
                   . strftime( "%d.%m.%Y",
-                    localtime( $single_warning->{'dtgStart'} ) )
-                  . '|';
+                    localtime( $single_warning->{'dtgStart'} ) ) . '|';
 
                 Log $hash, 4,
                     'Warn_'
@@ -1348,8 +1349,7 @@ sub Run {
                   . $i
                   . '_Start_Time|'
                   . strftime( "%H:%M",
-                    localtime( $single_warning->{'dtgStart'} ) )
-                  . '|';
+                    localtime( $single_warning->{'dtgStart'} ) ) . '|';
 
                 Log $hash, 4,
                     'Warn_'
@@ -1361,8 +1361,7 @@ sub Run {
                   . $i
                   . '_End_Date|'
                   . strftime( "%d.%m.%Y",
-                    localtime( $single_warning->{'dtgEnd'} ) )
-                  . '|';
+                    localtime( $single_warning->{'dtgEnd'} ) ) . '|';
 
                 Log $hash, 4,
                     'Warn_'
@@ -1374,8 +1373,7 @@ sub Run {
                   . $i
                   . '_End_Time|'
                   . strftime( "%H:%M",
-                    localtime( $single_warning->{'dtgEnd'} ) )
-                  . '|';
+                    localtime( $single_warning->{'dtgEnd'} ) ) . '|';
 
                 Log $hash, 4,
                     'Warn_'
@@ -1398,7 +1396,12 @@ sub Run {
                   . strftime( "%H:%M", localtime($chopcreation) ) . '|';
 
                 # Begin Language by AttrVal
-                if ( $hash->{CountryCode} ~~ [ 'DE', 'AT', 'CH' ] ) {
+                if (
+                    contains_string(
+                        $hash->{CountryCode}, ( 'DE', 'AT', 'CH' )
+                    )
+                  )
+                {
                     Log $hash, 4,
                         'Warn_'
                       . $i
@@ -1430,11 +1433,10 @@ sub Run {
                       . $uwzlevelname{
                         GetUWZLevel( $hash,
                             $single_warning->{'payload'}{'levelName'} )
-                      }
-                      . '|';
+                      } . '|';
 
                 }
-                elsif ( $hash->{CountryCode} ~~ ['NL'] ) {
+                elsif ( $hash->{CountryCode} eq 'NL' ) {
                     Log $hash, 4,
                         'Warn_'
                       . $i
@@ -1469,11 +1471,10 @@ sub Run {
                       . $uwzlevelname{
                         GetUWZLevel( $hash,
                             $single_warning->{'payload'}{'levelName'} )
-                      }
-                      . '|';
+                      } . '|';
 
                 }
-                elsif ( $hash->{CountryCode} ~~ ['FR'] ) {
+                elsif ( $hash->{CountryCode} eq 'FR' ) {
                     Log $hash, 4,
                         'Warn_'
                       . $i
@@ -1505,8 +1506,7 @@ sub Run {
                       . $uwzlevelname{
                         GetUWZLevel( $hash,
                             $single_warning->{'payload'}{'levelName'} )
-                      }
-                      . '|';
+                      } . '|';
 
                 }
                 else {
@@ -1541,8 +1541,7 @@ sub Run {
                       . $uwzlevelname{
                         GetUWZLevel( $hash,
                             $single_warning->{'payload'}{'levelName'} )
-                      }
-                      . '|';
+                      } . '|';
 
                 }
 
@@ -1591,13 +1590,18 @@ sub Run {
             }
             else {
                 # Begin Language by AttrVal
-                if ( $hash->{CountryCode} ~~ [ 'DE', 'AT', 'CH' ] ) {
+                if (
+                    contains_string(
+                        $hash->{CountryCode}, ( 'DE', 'AT', 'CH' )
+                    )
+                  )
+                {
                     $uclang = 'DE';
                 }
-                elsif ( $hash->{CountryCode} ~~ ['NL'] ) {
+                elsif ( $hash->{CountryCode} eq 'NL' ) {
                     $uclang = 'NL';
                 }
-                elsif ( $hash->{CountryCode} ~~ ['FR'] ) {
+                elsif ( $hash->{CountryCode} eq 'FR' ) {
                     $uclang = 'FR';
                 }
                 else {
@@ -1690,21 +1694,22 @@ sub Run {
 
             # Begin Language by AttrVal
 
-            if ( $hash->{CountryCode} ~~ [ 'DE', 'AT', 'CH' ] ) {
+            if ( contains_string( $hash->{CountryCode}, ( 'DE', 'AT', 'CH' ) ) )
+            {
 
                 $hagelcount = my @hagelmatch =
                   $single_warning->{'payload'}{'translationsLongText'}{'DE'} =~
                   /Hagel/g;
 
             }
-            elsif ( $hash->{CountryCode} ~~ ['NL'] ) {
+            elsif ( $hash->{CountryCode} eq 'NL' ) {
 
                 $hagelcount = my @hagelmatch =
                   $single_warning->{'payload'}{'translationsLongText'}{'NL'} =~
                   /hagel/g;
 
             }
-            elsif ( $hash->{CountryCode} ~~ ['FR'] ) {
+            elsif ( $hash->{CountryCode} eq 'FR' ) {
 
                 $hagelcount = my @hagelmatch =
                   $single_warning->{'payload'}{'translationsLongText'}{'FR'} =~
@@ -1749,7 +1754,8 @@ sub Run {
 
         ## Begin of redundant Reading
         if ( $UWZ_humanreadable eq 1 ) {
-            if ( $hash->{CountryCode} ~~ [ 'DE', 'AT', 'CH' ] ) {
+            if ( contains_string( $hash->{CountryCode}, ( 'DE', 'AT', 'CH' ) ) )
+            {
                 my %uwzlevelname = (
                     '0' => 'Stufe Grün (keine Warnung)',
                     '1' => 'Stufe Dunkelgrün (Wetterhinweise)',
@@ -1762,7 +1768,7 @@ sub Run {
                 $message .= 'WarnUWZLevel_Str|' . $uwzlevelname{$max} . '|';
 
             }
-            elsif ( $hash->{CountryCode} ~~ ['NL'] ) {
+            elsif ( $hash->{CountryCode} eq 'NL' ) {
                 my %uwzlevelname = (
                     '0' => 'niveau groen (geen waarschuwingen)',
                     '1' => 'niveau donkergroen (voorwaarschuwing)',
@@ -1778,7 +1784,7 @@ sub Run {
                 $message .= 'WarnUWZLevel_Str|' . $uwzlevelname{$max} . '|';
 
             }
-            elsif ( $hash->{CountryCode} ~~ ['FR'] ) {
+            elsif ( $hash->{CountryCode} eq 'FR' ) {
                 my %uwzlevelname = (
                     '0' => 'niveau vert (aucune alerte)',
                     '1' => 'niveau vert foncé (indication météo)',
@@ -1863,7 +1869,11 @@ sub UWZAsHtml {
             }
         }
         else {
-            for ( my $i = 0 ; $i < ReadingsVal( $name, 'WarnCount', 0 ) ; $i++ )
+            for (
+                my $i = 0 ;
+                $i < ReadingsVal( $name, 'WarnCount', 0 ) ;
+                $i++
+              )
             {
 
                 $ret .= UWZHtmlFrame( $hash, 'Warn_' . $i, $attr, 1 );
@@ -1887,13 +1897,13 @@ sub UWZAsHtml {
         $ret .= '<tr><td class="uwzIcon" style="vertical-align:top;">';
 
         # language by AttrVal
-        if ( $hash->{CountryCode} ~~ [ 'DE', 'AT', 'CH' ] ) {
+        if ( contains_string( $hash->{CountryCode}, ( 'DE', 'AT', 'CH' ) ) ) {
             $ret .= '<b>Keine Warnungen</b>';
         }
-        elsif ( $hash->{CountryCode} ~~ ['NL'] ) {
+        elsif ( $hash->{CountryCode} eq 'NL' ) {
             $ret .= '<b>Geen waarschuwingen</b>';
         }
-        elsif ( $hash->{CountryCode} ~~ ['FR'] ) {
+        elsif ( $hash->{CountryCode} eq 'FR' ) {
             $ret .= '<b>Aucune alerte</b>';
         }
         else {
@@ -1916,8 +1926,8 @@ sub UWZAsHtmlLite {
 
     my $ret            = '';
     my $hash           = $defs{$name};
-    my $htmlsequence   = AttrVal( $name, 'htmlsequence', 'none' );
-    my $htmltitle      = AttrVal( $name, 'htmltitle', '' );
+    my $htmlsequence   = AttrVal( $name, 'htmlsequence',   'none' );
+    my $htmltitle      = AttrVal( $name, 'htmltitle',      '' );
     my $htmltitleclass = AttrVal( $name, 'htmltitleclass', '' );
     my $attr;
 
@@ -1951,8 +1961,11 @@ sub UWZAsHtmlLite {
             }
         }
         else {
-            for ( my $i = 0 ;
-                $i < ReadingsVal( $name, 'WarnCount', '' ) ; $i++ )
+            for (
+                my $i = 0 ;
+                $i < ReadingsVal( $name, 'WarnCount', '' ) ;
+                $i++
+              )
             {
                 $ret .= UWZHtmlFrame( $hash, 'Warn_' . $i, $attr, 0 );
             }
@@ -1974,13 +1987,13 @@ sub UWZAsHtmlLite {
         $ret .= '<tr><td class="uwzIcon" style="vertical-align:top;">';
 
         # language by AttrVal
-        if ( $hash->{CountryCode} ~~ [ 'DE', 'AT', 'CH' ] ) {
+        if ( contains_string( $hash->{CountryCode}, ( 'DE', 'AT', 'CH' ) ) ) {
             $ret .= '<b>Keine Warnungen</b>';
         }
-        elsif ( $hash->{CountryCode} ~~ ['NL'] ) {
+        elsif ( $hash->{CountryCode} eq 'NL' ) {
             $ret .= '<b>Geen waarschuwingen</b>';
         }
-        elsif ( $hash->{CountryCode} ~~ ['FR'] ) {
+        elsif ( $hash->{CountryCode} eq 'FR' ) {
             $ret .= '<b>Aucune alerte</b>';
         }
         else {
@@ -2001,7 +2014,7 @@ sub UWZAsHtmlLite {
 sub UWZAsHtmlFP {
     my $name = shift;
 
-    my $tablewidth = ReadingsVal( $name, 'WarnCount', '' ) * 80;
+    my $tablewidth     = ReadingsVal( $name, 'WarnCount', '' ) * 80;
     my $htmlsequence   = AttrVal( $name, 'htmlsequence',   'none' );
     my $htmltitle      = AttrVal( $name, 'htmltitle',      '' );
     my $htmltitleclass = AttrVal( $name, 'htmltitleclass', '' );
@@ -2066,13 +2079,13 @@ sub UWZAsHtmlMovie {
     }
     else {
         # language by AttrVal
-        if ( $hash->{CountryCode} ~~ [ 'DE', 'AT', 'CH' ] ) {
+        if ( contains_string( $hash->{CountryCode}, ( 'DE', 'AT', 'CH' ) ) ) {
             $ret .= 'unbekannte Landbezeichnung';
         }
-        elsif ( $hash->{CountryCode} ~~ ['NL'] ) {
+        elsif ( $hash->{CountryCode} eq 'NL' ) {
             $ret .= 'Onbekende landcode';
         }
-        elsif ( $hash->{CountryCode} ~~ ['FR'] ) {
+        elsif ( $hash->{CountryCode} eq 'FR' ) {
             $ret .= 'code de pays inconnu';
         }
         else {
@@ -2107,13 +2120,13 @@ sub UWZAsHtmlKarteLand {
     }
     else {
         # language by AttrVal
-        if ( $hash->{CountryCode} ~~ [ 'DE', 'AT', 'CH' ] ) {
+        if ( contains_string( $hash->{CountryCode}, ( 'DE', 'AT', 'CH' ) ) ) {
             $ret .= 'unbekannte Landbezeichnung';
         }
-        elsif ( $hash->{CountryCode} ~~ ['NL'] ) {
+        elsif ( $hash->{CountryCode} eq 'NL' ) {
             $ret .= 'onbekende landcode';
         }
-        elsif ( $hash->{CountryCode} ~~ ['FR'] ) {
+        elsif ( $hash->{CountryCode} eq 'FR' ) {
             $ret .= 'code de pays inconnu';
         }
         else {
@@ -2183,7 +2196,7 @@ sub UWZHtmlTimestamp {
     if ( length($min) == 1 )  { $min  = "0$min"; }
 
     # language by AttrVal
-    if ( $hash->{CountryCode} ~~ [ 'DE', 'AT', 'CH' ] ) {
+    if ( contains_string( $hash->{CountryCode}, ( 'DE', 'AT', 'CH' ) ) ) {
         $ret .=
             "<td><b>$DEText[$StartEnd]</b></td><td>"
           . "$DEweekdays[$wday], $mday $DEmonths[$mon] "
@@ -2191,7 +2204,7 @@ sub UWZHtmlTimestamp {
           . " $hour:$min "
           . "$DEText[2]</td>";
     }
-    elsif ( $hash->{CountryCode} ~~ ['NL'] ) {
+    elsif ( $hash->{CountryCode} eq 'NL' ) {
         $ret .=
             "<td><b>$NLText[$StartEnd]</b></td><td>"
           . "$NLweekdays[$wday], $mday $NLmonths[$mon] "
@@ -2199,7 +2212,7 @@ sub UWZHtmlTimestamp {
           . " $hour:$min "
           . "$NLText[2]</td>";
     }
-    elsif ( $hash->{CountryCode} ~~ ['FR'] ) {
+    elsif ( $hash->{CountryCode} eq 'FR' ) {
         $ret .=
             "<td><b>$FRText[$StartEnd]</b></td><td>"
           . "$FRweekdays[$wday], $mday $FRmonths[$mon] "
@@ -2330,7 +2343,7 @@ sub UWZSearchLatLon {
         protocols_allowed => ['http'],
         timeout           => 10
     );
-    my $request = HTTP::Request->new( GET => $url );
+    my $request  = HTTP::Request->new( GET => $url );
     my $response = $agent->request($request);
     $err_log = 'Can\'t get ' . $url . ' -- ' . $response->status_line
       if ( !$response->is_success );
@@ -2340,7 +2353,7 @@ sub UWZSearchLatLon {
     }
 
     use XML::Simple qw(:strict);
-    use Encode qw(decode encode);
+    use Encode      qw(decode encode);
 
     my $uwzxmlparser = XML::Simple->new();
     my $search       = $uwzxmlparser->XMLin(
@@ -2378,8 +2391,7 @@ sub UWZSearchLatLon {
                 '<a href="/fhem?cmd=get%20'
               . $name
               . '%20AreaID%20'
-              . $value->{'latitude'}
-              . ','
+              . $value->{'latitude'} . ','
               . $value->{'longitude'}
               . $::FW_CSRF
               . '">Get AreaID</a>';
@@ -2412,7 +2424,7 @@ sub UWZSearchAreaID {
         protocols_allowed => ['http'],
         timeout           => 10
     );
-    my $request = HTTP::Request->new( GET => $url );
+    my $request  = HTTP::Request->new( GET => $url );
     my $response = $agent->request($request);
     $err_log = "Can't get $url -- " . $response->status_line
       if ( !$response->is_success );

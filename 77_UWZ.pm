@@ -3,13 +3,14 @@
 #  77_UWZ.pm
 #
 #  (c) 2015-2016 Tobias D. Oestreicher
-#  (c) 2017-2021 Marko Oldenburg
+#  (c) 2017-2025 Marko Oldenburg
 #
 #  Special thanks goes to comitters:
 #       - Marko Oldenburg (fhemdevelopment at cooltux dot net)
 #       - Hanjo (Forum) patch for sort by creation
 #       - cb1 <kontakt@it-buchinger.de> patch Replace Iconv with native perl encode()
 #       - KölnSolar (Markus) new write UWZAsHtml with smaler Code
+#       - betateilchen (Forum) patch remove experimental perl code
 #
 #  Storm warnings from unwetterzentrale.de
 #  inspired by 59_PROPLANTA.pm
@@ -35,7 +36,7 @@
 #
 #
 #
-#  $Id: 77_UWZ.pm 25306 2021-12-06 05:27:48Z CoolTux $
+#  $Id$
 #
 ####################################################################################################
 # also a thanks goes to hexenmeister
